@@ -1,5 +1,4 @@
 const { Client, GatewayIntentBits } = require("discord.js");
-const fetch = require("node-fetch");
 const { JSDOM } = require("jsdom");
 
 const TOKEN = process.env.DISCORD_TOKEN;
@@ -22,13 +21,13 @@ async function startWatcher() {
 
   setInterval(async () => {
     try {
+      // Node.js 22+ has global fetch
       const res = await fetch("https://www.csgoroll.com/roll");
       const html = await res.text();
 
       const dom = new JSDOM(html);
       const document = dom.window.document;
 
-      // select all roll items
       const items = [...document.querySelectorAll(".rolls a[href='/roll/history']")];
       if (items.length < 2) return;
 
@@ -54,7 +53,7 @@ async function startWatcher() {
     } catch (err) {
       console.log("Error scanning CSGORoll:", err.message);
     }
-  }, 4000); // every 4 seconds
+  }, 4000); // check every 4 seconds
 }
 
 async function sendPing() {
