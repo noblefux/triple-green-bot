@@ -7,11 +7,9 @@
     "start": "node index.js"
   },
   "dependencies": {
-  "discord.js": "^14.14.1",
-  "puppeteer": "^21.6.0",
-  "puppeteer-extra": "^3.3.4",
-  "puppeteer-extra-plugin-stealth": "^2.11.1"
-}
-
+    "discord.js": "^14.14.1",
+    "puppeteer": "^21.6.0",
+    "puppeteer-extra": "^3.3.4",
+    "puppeteer-extra-plugin-stealth": "^2.11.1"
   }
 }
