@@ -4,9 +4,9 @@ const StealthPlugin = require("puppeteer-extra-plugin-stealth");
 
 puppeteer.use(StealthPlugin());
 
-const TOKEN = process.env.DISCORD_TOKEN;
-const CHANNEL_ID = process.env.CHANNEL_ID;
-const ROLE_ID = process.env.ROLE_ID;
+const TOKEN = process.env.DISCORD_TOKEN;    // Your bot token
+const CHANNEL_ID = process.env.CHANNEL_ID;  // Discord channel ID
+const ROLE_ID = process.env.ROLE_ID;        // Discord role ID to ping
 
 const client = new Client({
   intents: [GatewayIntentBits.Guilds]
@@ -21,8 +21,10 @@ client.once("ready", () => {
 
 async function startWatcher() {
 
+  // Launch Puppeteer using bundled Chromium
   const browser = await puppeteer.launch({
-    headless: true, // use Puppeteer's bundled Chromium
+    executablePath: puppeteer.executablePath(), // use bundled Chromium
+    headless: true,
     args: [
       "--no-sandbox",
       "--disable-setuid-sandbox",
@@ -41,17 +43,19 @@ async function startWatcher() {
 
   console.log("Opened roll page");
 
+  // Check every 4 seconds
   setInterval(async () => {
     try {
-
       const result = await page.evaluate(() => {
 
+        // Select all roll items
         const items = document.querySelectorAll(".rolls a[href='/roll/history']");
         if (!items || items.length < 2) return null;
 
         const first = items[0];   // newest roll
         const second = items[1];  // previous roll
 
+        // Detect color
         const getColor = (el) => {
           const cls = el.className;
           if (cls.includes("bg-green")) return "green";
@@ -69,6 +73,7 @@ async function startWatcher() {
 
       if (!result) return;
 
+      // Double green detected
       if (result.first === "green" && result.second === "green") {
         if (lastAlertId !== result.key) {
           lastAlertId = result.key;
@@ -79,9 +84,10 @@ async function startWatcher() {
     } catch (err) {
       console.log("Watcher error:", err.message);
     }
-  }, 4000); // check every 4 seconds
+  }, 4000);
 }
 
+// Function to ping Discord role
 async function sendPing() {
   try {
     const channel = await client.channels.fetch(CHANNEL_ID);
