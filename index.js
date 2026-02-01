@@ -26,7 +26,7 @@ const browser = await puppeteer.launch({
 
   const page = await browser.newPage();
 
-  await page.goto("https://csgoroll.com/en/roulette", {
+  await page.goto("https://csgoroll.com/roll", {
     waitUntil: "networkidle2"
   });
 
