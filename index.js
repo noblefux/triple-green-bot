@@ -43,7 +43,7 @@ async function startWatcher() {
           const items = document.querySelectorAll(".roll-history-item");
         */
 
-        const items = document.querySelectorAll(".roll-history-item");
+        const items = document.querySelectorAll("a.roll");
 
         if (!items || items.length < 2) return null;
 
@@ -51,11 +51,11 @@ async function startWatcher() {
         const second = items[1];
 
         const getColor = (el) => {
-          if (el.className.includes("green")) return "green";
-          if (el.className.includes("red")) return "red";
-          if (el.className.includes("black")) return "black";
-          return "unknown";
-        };
+  if (el.classList.contains("bg-green")) return "green";
+  if (el.classList.contains("bg-red")) return "red";
+  if (el.classList.contains("bg-black")) return "black";
+  return "unknown";
+};
 
         return {
           first: getColor(first),
