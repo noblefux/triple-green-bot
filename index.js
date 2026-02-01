@@ -1,12 +1,10 @@
 const { Client, GatewayIntentBits } = require("discord.js");
-const puppeteer = require("puppeteer-extra");
-const StealthPlugin = require("puppeteer-extra-plugin-stealth");
+const fetch = require("node-fetch");
+const { JSDOM } = require("jsdom");
 
-puppeteer.use(StealthPlugin());
-
-const TOKEN = process.env.DISCORD_TOKEN;    // Your bot token
-const CHANNEL_ID = process.env.CHANNEL_ID;  // Discord channel ID
-const ROLE_ID = process.env.ROLE_ID;        // Discord role ID to ping
+const TOKEN = process.env.DISCORD_TOKEN;
+const CHANNEL_ID = process.env.CHANNEL_ID;
+const ROLE_ID = process.env.ROLE_ID;
 
 const client = new Client({
   intents: [GatewayIntentBits.Guilds]
@@ -20,74 +18,45 @@ client.once("ready", () => {
 });
 
 async function startWatcher() {
+  console.log("Starting CSGORoll scan...");
 
-  // Launch Puppeteer using bundled Chromium
-  const browser = await puppeteer.launch({
-    executablePath: puppeteer.executablePath(), // use bundled Chromium
-    headless: true,
-    args: [
-      "--no-sandbox",
-      "--disable-setuid-sandbox",
-      "--disable-dev-shm-usage",
-      "--disable-gpu"
-    ],
-    defaultViewport: null
-  });
-
-  const page = await browser.newPage();
-
-  await page.goto("https://www.csgoroll.com/roll", {
-    waitUntil: "networkidle2",
-    timeout: 60000
-  });
-
-  console.log("Opened roll page");
-
-  // Check every 4 seconds
   setInterval(async () => {
     try {
-      const result = await page.evaluate(() => {
+      const res = await fetch("https://www.csgoroll.com/roll");
+      const html = await res.text();
 
-        // Select all roll items
-        const items = document.querySelectorAll(".rolls a[href='/roll/history']");
-        if (!items || items.length < 2) return null;
+      const dom = new JSDOM(html);
+      const document = dom.window.document;
 
-        const first = items[0];   // newest roll
-        const second = items[1];  // previous roll
+      // select all roll items
+      const items = [...document.querySelectorAll(".rolls a[href='/roll/history']")];
+      if (items.length < 2) return;
 
-        // Detect color
-        const getColor = (el) => {
-          const cls = el.className;
-          if (cls.includes("bg-green")) return "green";
-          if (cls.includes("bg-red")) return "red";
-          if (cls.includes("bg-black")) return "black";
-          return "unknown";
-        };
+      const getColor = el => {
+        const cls = el.className;
+        if (cls.includes("bg-green")) return "green";
+        if (cls.includes("bg-red")) return "red";
+        if (cls.includes("bg-black")) return "black";
+        return "unknown";
+      };
 
-        return {
-          first: getColor(first),
-          second: getColor(second),
-          key: first.className + "|" + second.className
-        };
-      });
+      const first = getColor(items[0]);
+      const second = getColor(items[1]);
+      const key = items[0].className + "|" + items[1].className;
 
-      if (!result) return;
-
-      // Double green detected
-      if (result.first === "green" && result.second === "green") {
-        if (lastAlertId !== result.key) {
-          lastAlertId = result.key;
+      if (first === "green" && second === "green") {
+        if (lastAlertId !== key) {
+          lastAlertId = key;
           await sendPing();
         }
       }
 
     } catch (err) {
-      console.log("Watcher error:", err.message);
+      console.log("Error scanning CSGORoll:", err.message);
     }
-  }, 4000);
+  }, 4000); // every 4 seconds
 }
 
-// Function to ping Discord role
 async function sendPing() {
   try {
     const channel = await client.channels.fetch(CHANNEL_ID);
