@@ -32,68 +32,60 @@ async function startWatcher() {
 
   console.log("Opened roll page");
 
+  // check every 4 seconds
   setInterval(async () => {
     try {
 
       const result = await page.evaluate(() => {
 
-        /*
-          You must inspect ONE roll tile and replace this selector.
-          Example only:
-          const items = document.querySelectorAll(".roll-history-item");
-        */
-
-        const items = document.querySelectorAll("a.roll");
-
+        // select all roll items
+        const items = document.querySelectorAll(".rolls a[href='/roll/history']");
         if (!items || items.length < 2) return null;
 
-        const first = items[0];
-        const second = items[1];
+        const first = items[0];   // newest roll
+        const second = items[1];  // previous roll
 
+        // detect color from class
         const getColor = (el) => {
-  if (el.classList.contains("bg-green")) return "green";
-  if (el.classList.contains("bg-red")) return "red";
-  if (el.classList.contains("bg-black")) return "black";
-  return "unknown";
-};
+          const cls = el.className;
+          if (cls.includes("bg-green")) return "green";
+          if (cls.includes("bg-red")) return "red";
+          if (cls.includes("bg-black")) return "black";
+          return "unknown";
+        };
 
         return {
           first: getColor(first),
           second: getColor(second),
-
-          // simple fingerprint so we only alert once
-          key: first.innerText + "|" + second.innerText
+          key: first.className + "|" + second.className // unique per double-green
         };
-
       });
 
       if (!result) return;
 
-      if (
-        result.first === "green" &&
-        result.second === "green"
-      ) {
-
+      // double green detected
+      if (result.first === "green" && result.second === "green") {
         if (lastAlertId !== result.key) {
           lastAlertId = result.key;
           await sendPing();
         }
-
       }
 
-    } catch (e) {
-      console.log("Watcher error:", e.message);
+    } catch (err) {
+      console.log("Watcher error:", err.message);
     }
-
   }, 4000);
 }
 
 async function sendPing() {
-  const channel = await client.channels.fetch(CHANNEL_ID);
-
-  await channel.send(
-    `<@&${ROLE_ID}> 🟢🟢 **DOUBLE GREEN ON CSGOROLL!**`
-  );
+  try {
+    const channel = await client.channels.fetch(CHANNEL_ID);
+    await channel.send(`<@&${ROLE_ID}> 🟢🟢 **DOUBLE GREEN ON CSGOROLL!**`);
+    console.log("Ping sent!");
+  } catch (err) {
+    console.log("Error sending ping:", err.message);
+  }
 }
 
+// login Discord
 client.login(TOKEN);
