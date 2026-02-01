@@ -1,5 +1,8 @@
 const { Client, GatewayIntentBits } = require("discord.js");
-const puppeteer = require("puppeteer");
+const puppeteer = require('puppeteer-extra');
+const StealthPlugin = require('puppeteer-extra-plugin-stealth');
+
+puppeteer.use(StealthPlugin());
 
 const TOKEN = process.env.DISCORD_TOKEN;
 const CHANNEL_ID = process.env.CHANNEL_ID;
@@ -19,8 +22,14 @@ client.once("ready", () => {
 async function startWatcher() {
 
   const browser = await puppeteer.launch({
-    headless: "new",
-    args: ["--no-sandbox", "--disable-setuid-sandbox"]
+    headless: true, // use bundled Chromium
+    args: [
+      "--no-sandbox",
+      "--disable-setuid-sandbox",
+      "--disable-dev-shm-usage",
+      "--disable-gpu"
+    ],
+    defaultViewport: null
   });
 
   const page = await browser.newPage();
@@ -32,20 +41,16 @@ async function startWatcher() {
 
   console.log("Opened roll page");
 
-  // check every 4 seconds
   setInterval(async () => {
     try {
-
       const result = await page.evaluate(() => {
 
-        // select all roll items
         const items = document.querySelectorAll(".rolls a[href='/roll/history']");
         if (!items || items.length < 2) return null;
 
         const first = items[0];   // newest roll
         const second = items[1];  // previous roll
 
-        // detect color from class
         const getColor = (el) => {
           const cls = el.className;
           if (cls.includes("bg-green")) return "green";
@@ -57,13 +62,12 @@ async function startWatcher() {
         return {
           first: getColor(first),
           second: getColor(second),
-          key: first.className + "|" + second.className // unique per double-green
+          key: first.className + "|" + second.className
         };
       });
 
       if (!result) return;
 
-      // double green detected
       if (result.first === "green" && result.second === "green") {
         if (lastAlertId !== result.key) {
           lastAlertId = result.key;
@@ -74,7 +78,7 @@ async function startWatcher() {
     } catch (err) {
       console.log("Watcher error:", err.message);
     }
-  }, 4000);
+  }, 4000); // check every 4 seconds
 }
 
 async function sendPing() {
@@ -87,5 +91,4 @@ async function sendPing() {
   }
 }
 
-// login Discord
 client.login(TOKEN);
