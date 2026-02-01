@@ -1,15 +1,13 @@
 {
-  "name": "triple-green-bot",
+  "name": "csgoroll-bot",
   "version": "1.0.0",
   "main": "index.js",
-  "type": "commonjs",
   "scripts": {
     "start": "node index.js"
   },
   "dependencies": {
     "discord.js": "^14.14.1",
-    "puppeteer": "^21.6.0",
-    "puppeteer-extra": "^3.3.4",
-    "puppeteer-extra-plugin-stealth": "^2.11.1"
+    "node-fetch": "^3.3.2",
+    "jsdom": "^22.1.0"
   }
 }
