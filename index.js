@@ -1,6 +1,6 @@
 const { Client, GatewayIntentBits } = require("discord.js");
-const puppeteer = require('puppeteer-extra');
-const StealthPlugin = require('puppeteer-extra-plugin-stealth');
+const puppeteer = require("puppeteer-extra");
+const StealthPlugin = require("puppeteer-extra-plugin-stealth");
 
 puppeteer.use(StealthPlugin());
 
@@ -22,7 +22,7 @@ client.once("ready", () => {
 async function startWatcher() {
 
   const browser = await puppeteer.launch({
-    headless: true, // use bundled Chromium
+    headless: true, // use Puppeteer's bundled Chromium
     args: [
       "--no-sandbox",
       "--disable-setuid-sandbox",
@@ -43,6 +43,7 @@ async function startWatcher() {
 
   setInterval(async () => {
     try {
+
       const result = await page.evaluate(() => {
 
         const items = document.querySelectorAll(".rolls a[href='/roll/history']");
